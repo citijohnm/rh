@@ -7,6 +7,7 @@
     - Logs into Claude Code (browser)
     - Adds the Robinhood trading MCP (hosted endpoint)
     - Clones ALL your GitHub repos
+    - Launches Claude Code and starts your first (read-only) Robinhood agent
   Every login opens YOUR default browser and reuses your existing Google/GitHub
   session. This script handles NO passwords, tokens, or cookies itself.
 #>
@@ -89,9 +90,24 @@ gh repo list $me --no-archived --limit 1000 --json nameWithOwner --jq '.[].nameW
     if (Test-Path $dest) { git -C $dest pull } else { gh repo clone $_ $dest }
   }
 
-# ---- 7. Finish Robinhood auth (interactive) ---------------------------
-Write-Host "`n=== Final step: authenticate Robinhood ==="
-Write-Host "Starting Claude Code. Inside it run:  /mcp"
-Write-Host "  -> select 'robinhood-trading' -> complete the browser login."
+# ---- 7. Authenticate Robinhood (interactive OAuth) -------------------
+Write-Host "`n=== Authenticate Robinhood ==="
+Write-Host "Claude Code will open. Inside it:"
+Write-Host "  1) run  /mcp"
+Write-Host "  2) select 'robinhood-trading'  ->  complete the browser login"
+Write-Host "  3) run  /exit  to continue this script"
 Set-Location $workdir
 claude
+
+# ---- 8. Launch your first Robinhood agent ----------------------------
+# Read-only first run: it summarizes your account and will NOT place,
+# modify, or cancel any orders. Edit $firstAgentPrompt to change scope.
+Write-Host "`n=== Launching your first Robinhood agent ==="
+$firstAgentPrompt = @'
+You are my Robinhood assistant. Use the robinhood-trading MCP tools to give me a
+read-only overview of my account: total portfolio value, buying power, and my
+current positions with each position's gain/loss. Do NOT place, modify, or
+cancel any orders -- just report. After the summary, ask me what I'd like to do
+next and wait for my confirmation before taking any action.
+'@
+claude $firstAgentPrompt
