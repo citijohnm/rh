@@ -7,7 +7,7 @@
     - Logs into Claude Code (browser)
     - Adds the Robinhood trading MCP (hosted endpoint)
     - Clones ALL your GitHub repos
-    - Launches Claude Code and starts your first (read-only) Robinhood agent
+    - Launches the Robinhood agent creator to build your first trading agent
   Every login opens YOUR default browser and reuses your existing Google/GitHub
   session. This script handles NO passwords, tokens, or cookies itself.
 #>
@@ -99,15 +99,16 @@ Write-Host "  3) run  /exit  to continue this script"
 Set-Location $workdir
 claude
 
-# ---- 8. Launch your first Robinhood agent ----------------------------
-# Read-only first run: it summarizes your account and will NOT place,
-# modify, or cancel any orders. Edit $firstAgentPrompt to change scope.
-Write-Host "`n=== Launching your first Robinhood agent ==="
-$firstAgentPrompt = @'
-You are my Robinhood assistant. Use the robinhood-trading MCP tools to give me a
-read-only overview of my account: total portfolio value, buying power, and my
-current positions with each position's gain/loss. Do NOT place, modify, or
-cancel any orders -- just report. After the summary, ask me what I'd like to do
-next and wait for my confirmation before taking any action.
-'@
-claude $firstAgentPrompt
+# ---- 8. Create your first Robinhood agent ----------------------------
+# Launches the agent creator. It interactively asks for a symbol, side, and
+# limit rule (limit price derived from today's opening price), writes a
+# ready-to-run agent under agents\, and launches it in Claude Code.
+# Defaults to confirm-first; pass -Live inside the creator for autonomous orders.
+Write-Host "`n=== Create your first Robinhood agent ==="
+$creator = Join-Path $workdir "rh\New-RobinhoodAgent.ps1"
+if (Test-Path $creator) {
+    & $creator -Launch
+} else {
+    Write-Warning "Agent creator not found at $creator -- clone of the rh repo may have failed."
+    Write-Host "You can still start Claude Code manually with: claude"
+}
